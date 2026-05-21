@@ -100,8 +100,12 @@ class AppConfig:
     def load(cls, config_path: str | Path = "energa2mqtt.json") -> "AppConfig":
         instance = cls()
 
-        with Path(config_path).open(encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            with Path(config_path).open(encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            logger.error(f"Config file not found: {config_path}")
+            return instance
 
         for section, values in data.items():
             if not hasattr(instance, section):
