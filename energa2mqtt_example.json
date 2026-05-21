@@ -1,0 +1,32 @@
+{
+    "logging": {
+        "verbose": false,
+        "log": "",
+        "log_date_format": "%Y-%m-%d %H:%M:%S",
+        "log_to_screen": true
+    },
+    "energa_access": {
+        "ssl_verify": true
+    },
+    "accounts":[
+        {
+            "name": "my home account",
+            "active": true,
+            "username": "email@example.com",
+            "password": "change me"
+        },
+        {
+            "name": "parents account",
+            "active": false,
+            "username": "father@family.org",
+            "password": "ILoveMyKids"
+        }
+    ],
+    "mqtt_config": {
+    "mqtt_broker": "mqtt.broker.address.local",
+    "mqtt_broker_port": 1883,
+    "mqtt_username": "",
+    "mqtt_password": "",
+    "mqtt_retain_flag": true
+    }
+}

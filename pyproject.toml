@@ -1,0 +1,43 @@
+[project]
+name = "energa-mojlicznik"
+version = "0.2.0"
+description = "Reads energy meter data from Energa MojLicznik page."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "bs4>=0.0.2",
+    "lxml>=6.1.1",
+    "paho-mqtt>=2.1.0",
+    "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "coverage",
+    "ruff",
+    "mypy",
+    "mypy-extensions",
+    "pytest",
+    "pytest-cov",
+    "pluggy"
+]
+
+[tool.ruff]
+line-length = 112
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # pycodestyle, pyflakes, isort
+
+[tool.mypy]
+strict = true
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50         # requires  min. 50% coverage to pass
+skip_empty = true       # skip files with no statements
+skip_covered = true     # skip files with 100% coverage

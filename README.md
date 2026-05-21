@@ -2,7 +2,7 @@
 
 ### Yet another "scrapping" integration for Energa S.A. meters.
 
-This piece of software can be used to gather energy production and consumption published on https://mojlicznik.energa-operator.pl and send it to mqtt broker. From that point meter readings can be easy picked up by Home Assistant or similar software which is mqtt capable. As this is "local" application so the rest of the documentation will be provided in polish.
+This piece of software can be used to gather energy production and consumption published on https://mojlicznik.energa-operator.pl and send it to mqtt broker. From that point, meter readings can be easy picked up by Home Assistant or similar software which is mqtt capable. As this is "local" application so the rest of the documentation will be provided in polish.
 
 
 #### Kolejna integracja typu "scrapping" dla strony "Mój licznik" dostawcy Energa. Oczywiście wszystko jest zależne od struktury strony, więc jeśli Energa zmieni coś na stronie koniecznie będą zmiany w kodzie.
@@ -12,21 +12,18 @@ Program odczytuje wartości energii ze strony https://mojlicznik.energa-operator
 
 - Może zostać uruchomiony "z ręki", z crona (patrz niżej) albo jako usługa systemd (patrz niżej), pewnie także na Windowsie - czego akurat nie sprawdzałem.
 
-- Napisana w Python 3.9.2 - niewykluczone, że będzie działać w starszych/nowszych wersjach.
+- Napisana w Python 3.13 - niewykluczone, że będzie działać w starszych/nowszych wersjach.
 
-- Do działania potrzebuje bibliotek/modułów (instalacja przez pip/apt), testowane na Debian GNU/Linux 11:
-  - paho-mqtt 1.6.1
-  - requests 2.28.1
-  - bs4 (beautifulsoup4 4.11.1)
-  - czasami tez program wymaga lxml 4.9.1
+- Używam `uv`, wiec wszystkie pakiety niezbędne do  działania są w `dependencies` w pliku `pyproject.toml`
+
+- Musisz mieć zainstalowane `uv` żeby w prosty sposób odtworzyć środowisko uruchomieniowe.
 
 ## Ficzery
 
-- Przesyła odczytane wartości do brokera mqtt
-- Obsługuje wiele kont (np Twoje, rodziców, albo szwagra), produkcję energii (A-) oraz zużycie (A+)
-- Być może obsługuje tylko A+
-- Na pewno nie obsługuje wiecej niż jednej taryfy (póki co), lub wiecej niż jednego licznika (nie miałem jak tego sprawdzić --> potrzebne dodatkowe dane --> napisz)
-- Prawdopodobnie zawiera błędy
+- Przesyła odczytane wartości do brokera mqtt zdefiniowanego w pliku konfiguracyjnym.
+- Obsługuje wiele kont (np Twoje, rodziców, albo szwagra), produkcję energii (A-) oraz zużycie (A+), także w taryfach strefowych - sprawdzone na G12W.
+- Na pewno nie obsługuje wiecej niż jednego licznika (PPE) - nie miałem jak tego sprawdzić --> potrzebne dodatkowe dane --> napisz / przyslij źródło strony z takim przypadkiem
+- Z dużą dozą pewności zawiera błędy
 
 ## Znane błędy
 
@@ -34,41 +31,69 @@ Program odczytuje wartości energii ze strony https://mojlicznik.energa-operator
 
 ## Konfiguracja
 
+- Obecnie program korzysta z pliku `json` jako magazynu konfiguracji, więc jeśli masz konfigurację z poprzedniej wersji (`config.py`), to możesz używając pliku `energa2mqtt_example.json`, "przerobić" swoją konfigurację na nową wesję.
 
-- Wyedytuj config.py i wpisz swoje dane do konta ze strony Mój licznik (account). Ustaw active na True jeśli chesz żeby to konto było sprawdzane.
+- Wyedytuj `energa2mqtt.json` i wpisz swoje dane do konta ze strony Mój licznik (account). Ustaw active na True jeśli chesz żeby to konto było sprawdzane.
 
     ```
-    account = [
+     "accounts":[
         {
             "name": "my home account",
-            "active": True,
-            "username": "user@email.com",
-            "password": "changeme",
+            "active": true,
+            "username": "email@example.com",
+            "password": "change me"
         }
+     ]
     ```
 
 - Wpisz namiary brokera mqtt
     ```
-    mqtt_config = {
     "mqtt_broker": "mqtt.broker.local",
     "mqtt_broker_port": 1883,
     "mqtt_username": None,
-    "mqtt_password": None,
-
+    "mqtt_password": None
     ```
-- Uruchom energa2mqtt.py (np: python3 energa2mqtt.py)
-- topic mqtt zostanie będzie ustawiony na /home/mojlicznik/<nazwa twojego konta>. Możesz to zmienić edytując:
+
+- Jeśli chcesz stworzyć plik logu, ustaw nazwe pliku w `log`
+- Jeśli chcesz logować tylko na enran (stdout), ustaw `log_to_screen` na `true`
+
+- Uruchom energa2mqtt.py (np: `python3 energa2mqtt.py`, albo `uv run energa2mqtt.py`)
+- topic mqtt zostanie będzie ustawiony na `/home/mojlicznik/<nazwa twojego konta>`. Możesz to zmienić edytując:
 
 ```
 "mqtt_topic_name": "home/mojlicznik/{}/{}",
 ```
 - Do brokera mqtt wysyłane są następujące informacje:
-  - name: a_plus dla energii zużytej, a_minus dla oddanej do sieci
+  - name: `a_plus` dla energii zużytej, `a_minus` dla oddanej do sieci
   - description: Opis pola - "Energia konsumpcja" albo "Energia produkcja"
-  - last_update: data i czas kiedy Energa zaktualizowała dane (przeważnie codziennie o północy)
+  - last_update: data i czas kiedy `Energa` zaktualizowała dane (przeważnie codziennie o północy)
   - last_refresh: data i czas kiedy dane ostani raz zostały odświeżone (kiedy ostatni razy był uruchomiony program)
-  - value: wartość odczytu
+  - value: wartość odczytu w kilowatogodzinach
   - unit: jednostka - kWh
+
+- Jeśli mamy taryfę dwustrefową, dodatkowo wysyłane są następujące encje:
+  - `a_plus_strefa_2` - dla energii zużytej w strefie 2
+  - `a_minus_strefa_2` - dla energii wyprodukowanej w strefie 2
+
+- Dodatkowo wysyłane są informacje o niektórych parametrach dostawcy energii:
+  - nazwa operatora
+  - od kiedy zawarta jest umowa
+  - numer punktu poboru energii (PPE)
+  - nazwa bieżącej taryfy
+  - typ odbiorcy
+  - adres punktu PPE
+
+```
+  "supplier_info": {
+    "supplier": "ENERGA-Obrót SA",
+    "contract_period_from": "2026-05-12",
+    "ppe": "XXXXXXXXXXXXXXXXX",
+    "tariff": "G12W",
+    "customer_type": "Wytwórca",
+    "ppe_address": "xx-xxx Miasto, Ulica numer"
+  }
+
+```
 
 ### Przykład (z home assistant developer tools):
 
@@ -82,47 +107,120 @@ value: 1111.111
 unit: kWh
 ```
 
- ### Przykładowa konfiguracja Home Assistant (do wpisania do /config/configuration.yaml)
+### Przykładowa konfiguracja Home Assistant dla taryfy G11 (do wpisania do /config/configuration.yaml)
 
 ```
-# Licznik energa    
-- platform: mqtt
-    name: "Licznik Energa zużycie"
-    json_attributes_topic: "home/mojlicznik/my home account/a_plus"
-    state_topic: "home/mojlicznik/my home account/a_plus"
-    unit_of_measurement: "kWh"
-    value_template: "{{ value_json.value }}"
-- platform: mqtt
-    name: "Licznik Energa produkcja"
-    json_attributes_topic: "home/mojlicznik/my home account/a_minus"
-    state_topic: "home/mojlicznik/my home account/a_minus"
-    unit_of_measurement: "kWh"
-    value_template: "{{ value_json.value }}"
+mqtt:
+    # Licznik energa
+    - name: "Licznik Energa zużycie"
+      json_attributes_topic: "home/mojlicznik/my home account/a_plus"
+      state_topic: "home/mojlicznik/my home account/a_plus"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa produkcja"
+      json_attributes_topic: "home/mojlicznik/my home account/a_minus"
+      state_topic: "home/mojlicznik/my home account/a_minus"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa supplier info"
+      json_attributes_topic: "home/mojlicznik/my home account/supplier_info"
+      state_topic: "home/mojlicznik/my home account/supplier_info"
+      value_template: "{{ value_json.value }}"
 ```
 
-W Home assistancie powinniśmy zobaczyć:
+W HA powinniśmy zobaczyć:
 ```
     - sensor.licznik_energa_produkcja
     - sensor.licznik_energa_zuzycie
+    - sensor.licznik_energa_supplier_info
 ```
 
-### Konfiguracja w przypadku chęci użycia zakładki 'Energy' w Home Assistant
+### Przykładowa konfiguracja Home Assistant dla taryfy strefowej G12W wraz z sensorami kompatybilnymi z zakładką 'Energy' HA
 
 ```
-  - name: "Licznik Energa zużycie energy tab"
-    json_attributes_topic: "home/mojlicznik/my home account/a_plus"
-    state_topic: "home/mojlicznik/my home account/a_plus"
-    unit_of_measurement: "kWh"
-    value_template: "{{ value_json.value }}"
-    state_class: total_increasing
-    device_class: energy
-  - name: "Licznik Energa produkcja energy tab"
-    json_attributes_topic: "home/mojlicznik/my home account/a_minus"
-    state_topic: "home/mojlicznik/my home account/a_minus"
-    unit_of_measurement: "kWh"
-    value_template: "{{ value_json.value }}"
-    state_class: total_increasing
-    device_class: energy
+mqtt:
+    # Licznik energa
+    - name: "Licznik Energa zużycie"
+      json_attributes_topic: "home/mojlicznik/my home account/a_plus"
+      state_topic: "home/mojlicznik/my home account/a_plus"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa produkcja"
+      json_attributes_topic: "home/mojlicznik/my home account/a_minus"
+      state_topic: "home/mojlicznik/my home account/a_minus"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa zużycie strefa 2"
+      json_attributes_topic: "home/mojlicznik/my home account/a_plus_strefa_2"
+      state_topic: "home/mojlicznik/my home account/a_plus_strefa_2"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa produkcja strefa 2"
+      json_attributes_topic: "home/mojlicznik/my home account/a_minus_strefa_2"
+      state_topic: "home/mojlicznik/my home account/a_minus_strefa_2"
+      unit_of_measurement: "kWh"
+      state_class: measurement
+      value_template: "{{ value_json.value }}"
+    - name: "Licznik Energa supplier info"
+      json_attributes_topic: "home/mojlicznik/my home account/supplier_info"
+      state_topic: "home/mojlicznik/my home account/supplier_info"
+      value_template: "{{ value_json.value }}"
+
+
+    # Licznik energa zakładka Energy
+    - name: "Licznik Energa zużycie energy tab"
+      json_attributes_topic: "home/mojlicznik/my home account/a_plus"
+      state_topic: "home/mojlicznik/my home account/a_plus"
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.value }}"
+      state_class: total_increasing
+      device_class: energy
+    - name: "Licznik Energa produkcja energy tab"
+      json_attributes_topic: "home/mojlicznik/my home account/a_minus"
+      state_topic: "home/mojlicznik/my home account/a_minus"
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.value }}"
+      state_class: total_increasing
+      device_class: energy
+    - name: "Licznik Energa zużycie strefa 2 energy tab"
+      json_attributes_topic: "home/mojlicznik/my home account/a_plus_strefa_2"
+      state_topic: "home/mojlicznik/my home account/a_plus_strefa_2"
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.value }}"
+      state_class: total_increasing
+      device_class: energy
+    - name: "Licznik Energa produkcja strefa 2 energy tab"
+      json_attributes_topic: "home/mojlicznik/my home account/a_minus_strefa_2"
+      state_topic: "home/mojlicznik/my home account/a_minus_strefa_2"
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json.value }}"
+      state_class: total_increasing
+      device_class: energy
+```
+
+W HA powinniśmy zobaczyć:
+```
+    - sensor.licznik_energa_produkcja
+    - sensor.licznik_energa_zuzycie
+    - sensor.licznik_energa_produkcja_strefa_2
+    - sensor.licznik_energa_zuzycie_strefa_2
+    - sensor.licznik_energa_supplier_info
+```
+
+### Przykładowa konfiguracja HA dla `supplier_info`
+
+```
+🏢 **Dostawca**: {{ state_attr('sensor.licznik_energa_supplier_info', 'supplier') }}
+🏷️ **Taryfa**: {{ state_attr('sensor.licznik_energa_supplier_info', 'tariff') }}
+📅 **Umowa od**: {{ state_attr('sensor.licznik_energa_supplier_info', 'contract_period_from') }}
+👤 **Typ klienta**: {{ state_attr('sensor.licznik_energa_supplier_info', 'customer_type') }}
+🔌**PPE**: {{ state_attr('sensor.licznik_energa_supplier_info', 'ppe') }}
+📍 **Adres PPE**: {{ state_attr('sensor.licznik_energa_supplier_info', 'ppe_address') }}
 
 ```
 
