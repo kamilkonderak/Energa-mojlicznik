@@ -14,9 +14,10 @@ Program odczytuje wartości energii ze strony https://mojlicznik.energa-operator
 
 - Napisana w Python 3.13 - niewykluczone, że będzie działać w starszych/nowszych wersjach.
 
-- Używam `uv`, wiec wszystkie pakiety niezbędne do  działania są w `dependencies` w pliku `pyproject.toml`
+- Musisz mieć zainstalowane [uv](docs.astral.sh/uv/getting-started/installation/) żeby w prosty sposób odtworzyć środowisko uruchomieniowe.
 
-- Musisz mieć zainstalowane `uv` żeby w prosty sposób odtworzyć środowisko uruchomieniowe.
+- Wszystkie pakiety niezbędne do  działania są w `dependencies` w pliku `pyproject.toml`. Wykonaj `uv sync`, żeby stworzyć środowisko uruchomieniowe.
+
 
 ## Ficzery
 
@@ -31,9 +32,9 @@ Program odczytuje wartości energii ze strony https://mojlicznik.energa-operator
 
 ## Konfiguracja
 
-- Obecnie program korzysta z pliku `json` jako magazynu konfiguracji, więc jeśli masz konfigurację z poprzedniej wersji (`config.py`), to możesz używając pliku `energa2mqtt_example.json`, "przerobić" swoją konfigurację na nową wesję.
+- Obecnie program domyślnie korzysta z pliku `energa2mqtt.json` jako magazynu konfiguracji, więc jeśli masz konfigurację z poprzedniej wersji (`config.py`), to możesz używając pliku `energa2mqtt_example.json`, "przerobić" swoją konfigurację na nową wesję.
 
-- Wyedytuj `energa2mqtt.json` i wpisz swoje dane do konta ze strony Mój licznik (account). Ustaw active na True jeśli chesz żeby to konto było sprawdzane.
+- Wyedytuj `energa2mqtt.json` i wpisz swoje dane do konta ze strony Mój licznik (sekacja `accounts`). Ustaw active na `true` jeśli chesz żeby to konto było sprawdzane.
 
     ```
      "accounts":[
@@ -46,12 +47,12 @@ Program odczytuje wartości energii ze strony https://mojlicznik.energa-operator
      ]
     ```
 
-- Wpisz namiary brokera mqtt
+- Wpisz namiary na broker mqtt
     ```
     "mqtt_broker": "mqtt.broker.local",
     "mqtt_broker_port": 1883,
-    "mqtt_username": None,
-    "mqtt_password": None
+    "mqtt_username": "",
+    "mqtt_password": ""
     ```
 
 - Jeśli chcesz stworzyć plik logu, ustaw nazwe pliku w `log`
@@ -257,9 +258,10 @@ After=network.target
 
 
 [Service]
+# python is run from virtual environment
 Type=simple
-ExecStart=/usr/bin/python3 /home/<user>/mojlicznik/energa2mqtt.py
-WorkingDirectory=/home/<user>/mojlicznik
+ExecStart=/home/<user>/mojlicznik/venv/bin/python /home/<user>/mojlicznik/energa2mqtt.py
+WorkingDirectory=/home/<user>/mojlicznik/
 KillMode=mixed
 
 [Install]
