@@ -260,7 +260,7 @@ After=network.target
 [Service]
 # python is run from virtual environment
 Type=simple
-ExecStart=/home/<user>/mojlicznik/venv/bin/python /home/<user>/mojlicznik/energa2mqtt.py
+ExecStart=/home/<user>/mojlicznik/.venv/bin/python /home/<user>/mojlicznik/energa2mqtt.py
 WorkingDirectory=/home/<user>/mojlicznik/
 KillMode=mixed
 
