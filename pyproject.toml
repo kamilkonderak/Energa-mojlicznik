@@ -1,7 +1,8 @@
 [project]
 name = "energa-mojlicznik"
 version = "0.2.0"
-description = "Reads energy meter data from Energa MojLicznik page."
+authors = [{name = "Andrzej Rabiczko", email = "arabiczko@gmail.com"}]
+description = "Reads energy meter data from Energa MojLicznik page https://mojlicznik.energa-operator.pl"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -11,7 +12,7 @@ dependencies = [
     "requests>=2.34.2",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "coverage",
     "ruff",
@@ -24,6 +25,7 @@ dev = [
 
 [tool.ruff]
 line-length = 112
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]  # pycodestyle, pyflakes, isort
