@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-
-# -------------------------------------------------------------------------------
-# Name:        Energa - Mój licznik - scrapping integration
+# -------------------------------------------------------------------------------------------------
+# Name:        Energa - Mój licznik - scrapping integration (https://mojlicznik.energa-operator.pl)
 # Purpose:     Integration with mqtt/home assistant
-#
 # Author:      arabiczko@gmail.com
-#
-# Created:     2022-06-30
 # Licence:     GPL
-# -------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 import json
 import logging
@@ -103,25 +99,31 @@ class AppConfig:
         try:
             with Path(config_path).open(encoding="utf-8") as f:
                 data = json.load(f)
+
+            for section, values in data.items():
+                if not hasattr(instance, section):
+                    raise KeyError(f"Unknown section: '{section}'")
+
+                target = getattr(instance, section)
+
+                if isinstance(target, ConfigDict):
+                    # validate keys and overwrite values from JSON
+                    unknown = values.keys() - target._defaults.keys()
+                    if unknown:
+                        raise KeyError(f"Unknown keys in section '{section}': {unknown}")
+                    target.update(values)
+                else:
+                    # normal field
+                    setattr(instance, section, values)
+
         except FileNotFoundError:
             logger.error(f"Config file not found: {config_path}")
-            return instance
-
-        for section, values in data.items():
-            if not hasattr(instance, section):
-                raise KeyError(f"Unknown section: '{section}'")
-
-            target = getattr(instance, section)
-
-            if isinstance(target, ConfigDict):
-                # validate keys and overwrite values from JSON
-                unknown = values.keys() - target._defaults.keys()
-                if unknown:
-                    raise KeyError(f"Unknown keys in section '{section}': {unknown}")
-                target.update(values)
-            else:
-                # normal field
-                setattr(instance, section, values)
+        except KeyError as e:
+            logger.error(f"Config file error: {e}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Config file JSON decode error: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error loading config: {e}")
 
         return instance
 
@@ -143,7 +145,7 @@ def get_web_version(html):
         version_div = footer_details.find("div")
         if version_div:
             web_version = version_div.text.strip().split()[1].strip()
-    
+
     return web_version
 
 def get_supplier_details(details_info):
@@ -166,7 +168,7 @@ def get_supplier_details(details_info):
             result['customer_type'] = details[i].replace("Typ ", "")
         elif "Adres PPE " in details[i]:
             result['ppe_address'] = details[i].replace("Adres PPE ", "")
-    
+
     return result
 
 
@@ -261,17 +263,22 @@ def mqtt_setup():
         mqtt_client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2,
                               client_id=appcfg.mqtt_config["mqtt_clientid"])
         if all([appcfg.mqtt_config["mqtt_username"] is not None,
-                appcfg.mqtt_config["mqtt_password"] is not None]):
+                appcfg.mqtt_config["mqtt_password"] is not None,
+                len(appcfg.mqtt_config["mqtt_username"]) > 0,
+                len(appcfg.mqtt_config["mqtt_password"]) > 0
+                ]):
             mqtt_client.username_pw_set(appcfg.mqtt_config["mqtt_username"],
                                         appcfg.mqtt_config["mqtt_password"])
 
-
-        if appcfg.mqtt_config["mqtt_broker"] is not None:
+        if appcfg.mqtt_config["mqtt_broker"] is not None and len(appcfg.mqtt_config["mqtt_broker"]) != 0:
             mqtt_client.on_connect = mqtt_on_connect
-            return mqtt_client
+        else:
+            raise ValueError("MQTT broker address is not set in configuration.")
+
+        return mqtt_client
 
     except Exception as e:
-        logger.error(f"mqtt setup error: {e}")
+        logger.exception(f"MQTT setup error: {e}")
 
 
 def mqtt_on_connect(client, userdata, flags, reason_code, properties):
@@ -285,7 +292,7 @@ def mqtt_on_publish(client, userdata, mid, reason_code, properties):
             logger.info(f"MQTT data published to reason_code={reason_code}")
 
     except Exception as e:
-        logger.error(f"Error in mqtt_on_publish: {e}")
+        logger.exception(f"Error in mqtt_on_publish: {e}")
 
 
 def mqtt_on_disconnect(client, userdata, flags, reason_code, properties):
@@ -295,7 +302,7 @@ def mqtt_on_disconnect(client, userdata, flags, reason_code, properties):
         if reason_code > 0:
             logger.exception(f"MQTT client disconnected with error (code: {reason_code})")
     except Exception as e:
-        logger.error(f"Error in mqtt_on_disconnect: {e}")
+        logger.exception(f"Error in mqtt_on_disconnect: {e}")
 
 
 def mqtt_on_message(client, userdata, message):
@@ -303,7 +310,7 @@ def mqtt_on_message(client, userdata, message):
         logger.info("message received {}s".format(message.payload.decode("utf-8")))
         logger.info("message topic={} qos={} retain flag={}".format(message.topic, message.qos, message.retain))
     except Exception as e:
-        logger.error(f"Error in mqtt_on_message: {e}")
+        logger.exception(f"Error in mqtt_on_message: {e}")
 
 def mqtt_send_to_broker(client, account, readings):
     try:
@@ -344,7 +351,7 @@ def mqtt_send_to_broker(client, account, readings):
         client.loop_stop()
         client.disconnect()
     except Exception as e:
-        logger.error(f"MQTT message publish error: {e}")
+        logger.exception(f"MQTT message publish error: {e}")
 
 def main():
     try:
