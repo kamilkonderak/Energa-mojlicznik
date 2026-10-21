@@ -1,0 +1,75 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Energa Mój Licznik",
+        "description": "Zaloguj się kontem z mojlicznik.energa-operator.pl. Energa publikuje jeden odczyt dziennie, około północy.",
+        "data": {
+          "username": "E-mail",
+          "password": "Hasło"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Zmiana hasła",
+        "description": "Energa odrzuciła hasło dla {username}. Wpisz aktualne.",
+        "data": {
+          "password": "Hasło"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Błędny e-mail lub hasło.",
+      "cannot_connect": "Brak połączenia z mojlicznik.energa-operator.pl. Spróbuj później.",
+      "unknown_page": "Logowanie OK, ale strona licznika wygląda inaczej niż oczekiwano (przerwa techniczna lub zmiana strony)."
+    },
+    "abort": {
+      "already_configured": "Ten licznik jest już dodany.",
+      "reauth_successful": "Hasło zaktualizowane."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje",
+        "data": {
+          "scan_interval_hours": "Sprawdzaj co (godzin)",
+          "import_statistics": "Dodawaj odczyty do statystyk we właściwym dniu (dla panelu Energia)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pobor": {
+        "name": "Pobór"
+      },
+      "pobor_strefa_1": {
+        "name": "Pobór strefa 1 (dzienna)"
+      },
+      "pobor_strefa_2": {
+        "name": "Pobór strefa 2 (nocna)"
+      },
+      "pobor_razem": {
+        "name": "Pobór razem"
+      },
+      "oddanie": {
+        "name": "Oddanie"
+      },
+      "oddanie_strefa_1": {
+        "name": "Oddanie strefa 1"
+      },
+      "oddanie_strefa_2": {
+        "name": "Oddanie strefa 2"
+      },
+      "oddanie_razem": {
+        "name": "Oddanie razem"
+      },
+      "odczyt": {
+        "name": "Czas odczytu"
+      },
+      "taryfa": {
+        "name": "Taryfa"
+      }
+    }
+  }
+}

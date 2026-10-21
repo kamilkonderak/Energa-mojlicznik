@@ -1,5 +1,90 @@
 # Energa S.A. "Mój licznik"
 
+Odczyty licznika z https://mojlicznik.energa-operator.pl w Home Assistancie — jako
+**natywna integracja** (zalecane) albo jako skrypt wysyłający dane do MQTT (starsza metoda, niżej).
+
+*Daily meter readings from Energa's "Mój licznik" portal, as a native Home Assistant
+integration (recommended) or an MQTT bridge script. The rest of the documentation is in Polish.*
+
+## Integracja Home Assistant (zalecane)
+
+### Instalacja
+
+1. HACS → ⋮ → **Custom repositories** → dodaj `https://github.com/kamilkonderak/Energa-mojlicznik`
+   jako *Integration*, zainstaluj **Energa Mój Licznik** i zrestartuj HA.
+   Bez HACS: skopiuj `custom_components/energa_mojlicznik` do `<config>/custom_components/`.
+2. **Ustawienia → Urządzenia i usługi → Dodaj integrację → Energa Mój Licznik**, wpisz
+   e-mail i hasło do Mój licznik. Hasło trzyma Home Assistant (magazyn wpisów
+   konfiguracji), nie plik w repozytorium.
+
+### Encje
+
+Identyfikatory są stałe, niezależne od języka HA:
+
+| Encja | Co to jest |
+|---|---|
+| `sensor.energa_pobor_strefa_1` | A+ strefa 1 (dzienna, szczyt) — kWh, `total_increasing` |
+| `sensor.energa_pobor_strefa_2` | A+ strefa 2 (nocna / weekend, pozaszczyt) |
+| `sensor.energa_pobor_razem` | Suma stref |
+| `sensor.energa_oddanie_strefa_1` / `_2` / `_razem` | A− (energia oddana), jeśli licznik ją pokazuje |
+| `sensor.energa_pobor` | Taryfy jednostrefowe (G11) zamiast stref |
+| `sensor.energa_odczyt` | Czas ostatniego odczytu (zwykle północ) — diagnostyczna |
+| `sensor.energa_taryfa` | Taryfa, sprzedawca, początek umowy — diagnostyczna |
+
+Atrybuty rejestrów: `odczyt` (czas odczytu), `strefa`, `nazwa_strefy` (z opisu na stronie:
+„dzienna”, „nocna”). Adres PPE nie jest wystawiany w encjach; numer PPE jest numerem seryjnym
+urządzenia.
+
+### Panel Energia
+
+Energa publikuje odczyt raz na dobę (około północy), a integracja pobiera go kilka godzin
+później. Gdyby panel Energia korzystał z samych encji, zużycie z wczoraj trafiałoby na dziś.
+Dlatego integracja zapisuje też **statystyki zewnętrzne** we właściwej godzinie (23:00–24:00
+dnia, którego odczyt dotyczy):
+
+- `energa_mojlicznik:pobor_strefa_1` — „Energa pobór strefa 1”
+- `energa_mojlicznik:pobor_strefa_2` — „Energa pobór strefa 2”
+- (oraz `oddanie_*`, jeśli są; drugi dodany licznik dostaje numer PPE w identyfikatorze,
+  np. `energa_mojlicznik:<PPE>_pobor_strefa_1`)
+
+W **Ustawienia → Panele → Energia → Pobór z sieci** dodaj obie strefy *pobór* (wybierz je po
+nazwie) i przypisz każdej cenę: strefie 1 cenę szczytową, strefie 2 pozaszczytową. Panel
+pokazuje dane dobowe — godzinowych Energa na tej stronie nie publikuje.
+
+Pierwszy odczyt po instalacji jest punktem startowym (zużycie 0); dane pojawiają się od
+następnej doby.
+
+### Opcje
+
+- **Sprawdzaj co (godzin)** — domyślnie 4 h. Częściej nie ma sensu (odczyt jest raz na dobę), a
+  zbyt częste logowanie może zablokować konto.
+- **Statystyki we właściwym dniu** — można wyłączyć, jeśli nie używasz panelu Energia.
+
+### Bezpieczeństwo
+
+- Integracja łączy się wyłącznie z `https://mojlicznik.energa-operator.pl` (z weryfikacją
+  certyfikatu), loguje się, pobiera stronę licznika i wylogowuje.
+- Hasło nie trafia do logów. Diagnostyka ukrywa e-mail, hasło, PPE i adres.
+- Gdy Energa odrzuci hasło, HA poprosi o nowe (ponowne uwierzytelnienie).
+- To scraping strony — jeśli Energa zmieni jej strukturę, integracja zgłosi błąd zamiast
+  zapisywać złe dane. Cała logika parsowania jest w `custom_components/energa_mojlicznik/parser.py`.
+
+### Testy
+
+Testy integracji wymagają Linuksa (np. kontener):
+
+```
+pip install pytest-homeassistant-custom-component beautifulsoup4 lxml
+python -m pytest tests/test_parser.py tests/test_config_flow.py tests/test_init.py
+```
+
+---
+
+## Starsza metoda: skrypt energa2mqtt (MQTT)
+
+> Plik `energa2mqtt.json` zawiera hasła — jest w `.gitignore`, nigdy go nie commituj.
+> Dla panelu Energia używaj czujników z `state_class: total_increasing` (drugi przykład niżej).
+
 ### Yet another "scrapping" integration for Energa S.A. meters.
 
 This piece of software can be used to gather energy production and consumption published on https://mojlicznik.energa-operator.pl and send it to mqtt broker. From that point, meter readings can be easy picked up by Home Assistant or similar software which is mqtt capable. As this is "local" application so the rest of the documentation will be provided in polish.

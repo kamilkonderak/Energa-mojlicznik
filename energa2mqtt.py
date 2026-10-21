@@ -243,12 +243,17 @@ def get_meter_page(account):
                  headers=appcfg.energa_access.headers, verify=appcfg.energa_access.ssl_verify)
       if (r.status_code) == 200:
           logger.info("login (code: {})".format(r.status_code))
-          r = s.get(appcfg.energa_access.data_url)
+          r = s.get(appcfg.energa_access.data_url,
+                    headers=appcfg.energa_access.headers, verify=appcfg.energa_access.ssl_verify)
+          if r.status_code == 200 and BeautifulSoup(r.text, "lxml").find("form", id="loginForm"):
+            logger.error("Login failed for '{}' account - check username and password".format(account['name']))
+            return None
           if r.status_code == 200:
             logger.info("downloaded meter data (code: {})".format(r.status_code))
             page_out = r.text
             # logout
-            r = s.get(appcfg.energa_access.logout_url, headers=appcfg.energa_access.headers)
+            r = s.get(appcfg.energa_access.logout_url, headers=appcfg.energa_access.headers,
+                      verify=appcfg.energa_access.ssl_verify)
             logger.info("logout (code: {})".format(r.status_code))
             return page_out
       else:

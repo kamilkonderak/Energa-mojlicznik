@@ -6,7 +6,7 @@ description = "Reads energy meter data from Energa MojLicznik page https://mojli
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "bs4>=0.0.2",
+    "beautifulsoup4>=4.12",
     "lxml>=6.1.1",
     "paho-mqtt>=2.1.0",
     "requests>=2.34.2",
