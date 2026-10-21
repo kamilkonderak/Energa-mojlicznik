@@ -1,0 +1,13 @@
+{
+  "domain": "energa_mojlicznik",
+  "name": "Energa Mój Licznik",
+  "codeowners": ["@kamilkonderak"],
+  "config_flow": true,
+  "dependencies": ["recorder"],
+  "documentation": "https://github.com/kamilkonderak/Energa-mojlicznik",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/kamilkonderak/Energa-mojlicznik/issues",
+  "requirements": ["beautifulsoup4>=4.12", "lxml>=5.0"],
+  "version": "1.0.0"
+}

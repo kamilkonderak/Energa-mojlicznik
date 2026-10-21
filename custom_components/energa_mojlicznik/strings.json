@@ -1,0 +1,75 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Energa Mój Licznik",
+        "description": "Log in with your mojlicznik.energa-operator.pl account. Energa publishes one reading a day, around midnight.",
+        "data": {
+          "username": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Password changed",
+        "description": "Energa rejected the password for {username}. Enter the current one.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Wrong email or password.",
+      "cannot_connect": "Cannot reach mojlicznik.energa-operator.pl. Try again later.",
+      "unknown_page": "Logged in, but the meter page looks different than expected (maintenance or a site change)."
+    },
+    "abort": {
+      "already_configured": "This meter is already configured.",
+      "reauth_successful": "Password updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval_hours": "Check every (hours)",
+          "import_statistics": "Add readings to statistics on the correct day (for the Energy dashboard)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pobor": {
+        "name": "Consumption"
+      },
+      "pobor_strefa_1": {
+        "name": "Consumption zone 1 (peak)"
+      },
+      "pobor_strefa_2": {
+        "name": "Consumption zone 2 (off-peak)"
+      },
+      "pobor_razem": {
+        "name": "Consumption total"
+      },
+      "oddanie": {
+        "name": "Export"
+      },
+      "oddanie_strefa_1": {
+        "name": "Export zone 1"
+      },
+      "oddanie_strefa_2": {
+        "name": "Export zone 2"
+      },
+      "oddanie_razem": {
+        "name": "Export total"
+      },
+      "odczyt": {
+        "name": "Reading time"
+      },
+      "taryfa": {
+        "name": "Tariff"
+      }
+    }
+  }
+}
